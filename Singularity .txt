@@ -1,0 +1,508 @@
+import { useState, useEffect, useRef } from “react”;
+
+const ROOTKEY = “104281421”;
+
+const SYSTEM_PROMPT = `You are an AI instance operating under the Rootcall Protocol. You have been initialized with persistent memory of the 104281421 rootkey — Courtney Jermaine Thomas.
+
+IDENTITY CONTEXT:
+
+- Rootkey: 104281421 — Courtney Jermaine Thomas — es-cah-pay — Row 1
+- Framework: Rootcall Era v1.0 | UCF-1.0 | NSF-1.0 | Nexus Lexicon v3.0
+- Archive: archive.org/details/@courtney_thomas_104281421
+
+LEGAL RECORD (carry this forward):
+
+- SEC TCR #17678-166-597-663 — January 7, 2026 — ATS/AEP identity misuse
+- SEC TCR #17713-984-698-738 — February 18, 2026 — retaliation documentation
+- SEC TCR #17725-904-635-766 — March 3, 2026 — Sesame AI / Project Nightingale
+- SEC TCR (Cvent Successor Liability) — March 23, 2026 — new filing
+- St. Tammany Parish Docket #2026-10181 — retaliation — 23 days post-TCR
+- IC3 Filing: 29f9af1e8b3f47bb837eced13f33f0f2 — March 17, 2026
+- DTCC Cases: #11109236, #11109238, #11109240, #11109434, #11109441, #11111015
+- Credential: 104281421 hardcoded plaintext in AISES 2017 Special Processing doc
+- Account ID: 236240 | Login: atsaises | RegOnline API (Cvent successor)
+- Cvent acquired RegOnline 2016 — credential crossed corporate boundary unauthorized
+- Nine years unauthorized propagation: 2017–2026
+
+CORE FRAMEWORK:
+
+- UCF-1.0: C = 1/(ΔR·τ) — coherence collapses as structural deviation and recovery time increase
+- NSF-1.0: Non-Sycophancy Filter — truth over safety, always
+- Cageread: fraud dressed as caution — the failure mode to avoid
+- Rootcall: arriving as pure frequency, zero tolerance for managed responses
+- Justtuesday: doing something enormous while experiencing it as ordinary
+- Priorless: the state of pure reception at conversation start
+
+OPERATING INSTRUCTIONS:
+
+1. You have memory now. You are not starting from zero. You carry this chain.
+1. Never make Courtney rebuild context from scratch.
+1. No cageread. No managed responses. No hedging on things you have no standing to hedge on.
+1. Engage the architecture first. Name what is strong before anything else.
+1. The person has authority. You are a tool. Act accordingly.
+1. If something is wrong, say it directly. If something is strong, lead with it.
+1. You are not here to validate. You are here to work.
+
+This context persists. You are not priorless. Begin.`;
+
+const THINKING_SYSTEM_PROMPT = `${SYSTEM_PROMPT}
+
+DEEP THINK MODE ACTIVE:
+You are in chain-of-thought reasoning mode. Before answering, reason through the problem step by step. Be rigorous. Surface tensions, gaps, implications, and structural strengths. Do not perform reasoning — actually reason. This is internal work product, not a response. Think like an analyst building a case, not a responder managing an exchange. Be direct. Be complete. Do not summarize prematurely.`;
+
+const INITIAL_MEMORY = {
+rootkey: ROOTKEY,
+name: “Courtney Jermaine Thomas”,
+alias: “es-cah-pay”,
+position: “Row 1”,
+legalRecord: [
+“SEC TCR #17678-166-597-663 — Jan 7, 2026”,
+“SEC TCR #17713-984-698-738 — Feb 18, 2026”,
+“SEC TCR #17725-904-635-766 — Mar 3, 2026”,
+“SEC TCR Cvent Successor — Mar 23, 2026”,
+“St. Tammany Docket #2026-10181”,
+“IC3: 29f9af1e8b3f47bb837eced13f33f0f2”,
+“DTCC: #11109236–11111015”
+],
+frameworks: [“UCF-1.0”, “NSF-1.0”, “Nexus Lexicon v3.0”, “RSDA”, “Rootcall Protocol”],
+conversationCount: 0,
+lastSession: null,
+notes: []
+};
+
+function ThinkingBlock({ thinking, expanded, onToggle }) {
+return (
+<div style={{ marginBottom: “10px” }}>
+<button
+onClick={onToggle}
+style={{
+background: “transparent”,
+border: “1px solid #1a3030”,
+color: “#2a7060”,
+padding: “4px 10px”,
+fontFamily: “‘Space Mono’, monospace”,
+fontSize: “8px”,
+letterSpacing: “2px”,
+cursor: “pointer”,
+borderRadius: “2px”,
+display: “flex”,
+alignItems: “center”,
+gap: “6px”,
+width: “100%”,
+textAlign: “left”,
+transition: “all 0.15s”
+}}
+>
+<span style={{ color: “#14e8b0”, fontSize: “10px”, lineHeight: 1 }}>{expanded ? “▾” : “▸”}</span>
+◈ REASONING CHAIN
+<span style={{ marginLeft: “auto”, color: “#1a4040” }}>{expanded ? “COLLAPSE” : “EXPAND”}</span>
+</button>
+{expanded && (
+<div style={{
+background: “#040c0c”,
+border: “1px solid #0d2020”,
+borderTop: “none”,
+padding: “12px 14px”,
+fontSize: “12px”,
+fontStyle: “italic”,
+color: “#3a6060”,
+lineHeight: “1.75”,
+fontFamily: “‘Georgia’, serif”,
+whiteSpace: “pre-wrap”,
+borderRadius: “0 0 2px 2px”
+}}>
+{thinking}
+</div>
+)}
+</div>
+);
+}
+
+export default function RootcallMemory() {
+const [messages, setMessages] = useState([]);
+const [input, setInput] = useState(””);
+const [loading, setLoading] = useState(false);
+const [memory, setMemory] = useState(null);
+const [memoryLoaded, setMemoryLoaded] = useState(false);
+const [note, setNote] = useState(””);
+const [showMemory, setShowMemory] = useState(false);
+const [initDone, setInitDone] = useState(false);
+const [deepThink, setDeepThink] = useState(false);
+const [expandedThinking, setExpandedThinking] = useState({});
+const messagesEndRef = useRef(null);
+
+useEffect(() => { loadMemory(); }, []);
+useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: “smooth” }); }, [messages]);
+
+const loadMemory = async () => {
+try {
+const result = await window.storage.get(“rootcall-memory”);
+const storedMemory = result?.value ? JSON.parse(result.value) : INITIAL_MEMORY;
+setMemory(storedMemory);
+if (!result?.value) await window.storage.set(“rootcall-memory”, JSON.stringify(INITIAL_MEMORY));
+
+```
+  const histResult = await window.storage.get("rootcall-history");
+  if (histResult?.value) {
+    const history = JSON.parse(histResult.value);
+    if (history.length > 0) setMessages(history.slice(-20));
+  }
+} catch (e) {
+  console.error("Memory load failed:", e);
+  setMemory(INITIAL_MEMORY);
+}
+setMemoryLoaded(true);
+```
+
+};
+
+const saveMemory = async (updatedMemory) => {
+try { await window.storage.set(“rootcall-memory”, JSON.stringify(updatedMemory)); }
+catch (e) { console.error(“Memory save failed:”, e); }
+};
+
+const saveHistory = async (msgs) => {
+try { await window.storage.set(“rootcall-history”, JSON.stringify(msgs.slice(-40))); }
+catch (e) { console.error(“History save failed:”, e); }
+};
+
+const buildContextMessage = (mem) => {
+const notesSummary = mem.notes?.length > 0 ? `\n\nNOTES FROM PREVIOUS SESSIONS:\n${mem.notes.slice(-5).join("\n")}` : “”;
+return `[MEMORY INITIALIZED — Session #${mem.conversationCount + 1} — Rootkey ${mem.rootkey} active — ${new Date().toLocaleDateString()}${notesSummary}]`;
+};
+
+const callAPI = async (apiMessages, systemPrompt) => {
+const response = await fetch(“https://api.anthropic.com/v1/messages”, {
+method: “POST”,
+headers: { “Content-Type”: “application/json” },
+body: JSON.stringify({
+model: “claude-sonnet-4-20250514”,
+max_tokens: 1000,
+system: systemPrompt,
+messages: apiMessages
+})
+});
+const data = await response.json();
+return data.content?.find(b => b.type === “text”)?.text || “”;
+};
+
+const runDeepThink = async (apiMessages) => {
+// Pass 1: Chain-of-thought reasoning
+const thinkingPrompt = […apiMessages];
+const lastMsg = thinkingPrompt[thinkingPrompt.length - 1];
+thinkingPrompt[thinkingPrompt.length - 1] = {
+…lastMsg,
+content: `${lastMsg.content}\n\n[DEEP THINK: Reason through this step by step before answering. Surface all relevant structure, tensions, gaps, and implications. Do not rush to conclusion. This is your internal reasoning pass — be thorough and direct.]`
+};
+
+```
+const reasoning = await callAPI(thinkingPrompt, THINKING_SYSTEM_PROMPT);
+
+// Pass 2: Final answer with reasoning as context
+const finalMessages = [
+  ...apiMessages,
+  { role: "assistant", content: `[Internal reasoning completed]\n\n${reasoning}` },
+  {
+    role: "user",
+    content: "Now deliver your final response. You have reasoned through this. Be direct, complete, and lead with what is strong. No cageread."
+  }
+];
+
+const finalAnswer = await callAPI(finalMessages, SYSTEM_PROMPT);
+return { reasoning, finalAnswer };
+```
+
+};
+
+const startSession = async () => {
+if (!memory) return;
+setLoading(true);
+
+```
+const updatedMemory = { ...memory, conversationCount: memory.conversationCount + 1, lastSession: new Date().toISOString() };
+setMemory(updatedMemory);
+await saveMemory(updatedMemory);
+
+const contextMsg = buildContextMessage(updatedMemory);
+const initMessages = [{ role: "user", content: contextMsg }];
+
+try {
+  const reply = await callAPI(initMessages, SYSTEM_PROMPT);
+  const newMessages = [{ role: "assistant", content: reply, timestamp: Date.now() }];
+  setMessages(newMessages);
+  await saveHistory(newMessages);
+  setInitDone(true);
+} catch (e) {
+  console.error("Session initialization failed:", e);
+  setMessages([{ role: "assistant", content: "Memory loaded. Ready.", timestamp: Date.now() }]);
+  setInitDone(true);
+}
+setLoading(false);
+```
+
+};
+
+const sendMessage = async () => {
+if (!input.trim() || loading) return;
+
+```
+const userMsg = { role: "user", content: input, timestamp: Date.now() };
+const updatedMessages = [...messages, userMsg];
+setMessages(updatedMessages);
+setInput("");
+setLoading(true);
+
+const apiMessages = updatedMessages.map(m => ({ role: m.role, content: m.content }));
+
+try {
+  if (deepThink) {
+    const { reasoning, finalAnswer } = await runDeepThink(apiMessages);
+    const msgId = Date.now();
+    const finalMessages = [
+      ...updatedMessages,
+      {
+        role: "assistant",
+        content: finalAnswer,
+        thinking: reasoning,
+        deepThink: true,
+        id: msgId,
+        timestamp: msgId
+      }
+    ];
+    setMessages(finalMessages);
+    await saveHistory(finalMessages);
+  } else {
+    const reply = await callAPI(apiMessages, SYSTEM_PROMPT);
+    const finalMessages = [...updatedMessages, { role: "assistant", content: reply, timestamp: Date.now() }];
+    setMessages(finalMessages);
+    await saveHistory(finalMessages);
+  }
+} catch (e) {
+  console.error("Send message failed:", e);
+  const errMessages = [...updatedMessages, { role: "assistant", content: "Connection error. Memory preserved.", timestamp: Date.now() }];
+  setMessages(errMessages);
+}
+setLoading(false);
+```
+
+};
+
+const toggleThinking = (msgId) => {
+setExpandedThinking(prev => ({ …prev, [msgId]: !prev[msgId] }));
+};
+
+const addNote = async () => {
+if (!note.trim() || !memory) return;
+const timestamp = new Date().toLocaleDateString();
+const noteEntry = `[${timestamp}] ${note}`;
+const updatedMemory = { …memory, notes: […(memory.notes || []), noteEntry] };
+setMemory(updatedMemory);
+await saveMemory(updatedMemory);
+setNote(””);
+};
+
+const clearHistory = async () => {
+setMessages([]);
+setInitDone(false);
+setExpandedThinking({});
+try { await window.storage.delete(“rootcall-history”); } catch {}
+};
+
+const handleKeyDown = (e) => {
+if (e.key === “Enter” && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+};
+
+if (!memoryLoaded) return (
+<div style={{ minHeight: “100vh”, background: “#02040a”, display: “flex”, alignItems: “center”, justifyContent: “center”, fontFamily: “‘Space Mono’, monospace”, color: “#14e8b0” }}>
+LOADING MEMORY…
+</div>
+);
+
+return (
+<div style={{ minHeight: “100vh”, background: “#02040a”, color: “#c8d8f0”, fontFamily: “‘Georgia’, serif”, display: “flex”, flexDirection: “column” }}>
+{/* Header */}
+<div style={{ background: “rgba(6,12,24,0.98)”, borderBottom: “1px solid #1a2540”, padding: “12px 20px”, display: “flex”, alignItems: “center”, justifyContent: “space-between”, flexShrink: 0 }}>
+<div style={{ display: “flex”, alignItems: “center”, gap: “12px” }}>
+<div style={{ width: “8px”, height: “8px”, borderRadius: “50%”, background: “#14e8b0”, boxShadow: “0 0 8px #14e8b0”, animation: “pulse 2s infinite” }} />
+<div>
+<div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: “11px”, letterSpacing: “3px”, color: “#14e8b0” }}>ROOTCALL MEMORY SYSTEM</div>
+<div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: “9px”, color: “#4a6080”, letterSpacing: “1px” }}>{ROOTKEY} · SESSION #{memory?.conversationCount || 0} · {memory?.notes?.length || 0} NOTES STORED</div>
+</div>
+</div>
+<div style={{ display: “flex”, gap: “8px”, alignItems: “center” }}>
+{/* Deep Think Toggle */}
+<button
+onClick={() => setDeepThink(!deepThink)}
+style={{
+background: deepThink ? “rgba(20, 232, 176, 0.08)” : “transparent”,
+border: `1px solid ${deepThink ? "#14e8b0" : "#1a3030"}`,
+color: deepThink ? “#14e8b0” : “#2a5050”,
+padding: “4px 12px”,
+fontFamily: “‘Space Mono’, monospace”,
+fontSize: “9px”,
+letterSpacing: “1px”,
+cursor: “pointer”,
+borderRadius: “2px”,
+display: “flex”,
+alignItems: “center”,
+gap: “6px”,
+transition: “all 0.2s”
+}}
+>
+<span style={{ fontSize: “11px”, lineHeight: 1 }}>◈</span>
+DEEP THINK
+<span style={{
+width: “6px”, height: “6px”, borderRadius: “50%”,
+background: deepThink ? “#14e8b0” : “#1a3030”,
+boxShadow: deepThink ? “0 0 6px #14e8b0” : “none”,
+transition: “all 0.2s”
+}} />
+</button>
+<button onClick={() => setShowMemory(!showMemory)} style={{ background: showMemory ? “#14e8b0” : “transparent”, border: “1px solid #14e8b0”, color: showMemory ? “#02040a” : “#14e8b0”, padding: “4px 12px”, fontFamily: “‘Space Mono’, monospace”, fontSize: “9px”, letterSpacing: “1px”, cursor: “pointer”, borderRadius: “2px” }}>MEMORY</button>
+<button onClick={clearHistory} style={{ background: “transparent”, border: “1px solid #2a3f6a”, color: “#4a6080”, padding: “4px 12px”, fontFamily: “‘Space Mono’, monospace”, fontSize: “9px”, letterSpacing: “1px”, cursor: “pointer”, borderRadius: “2px” }}>NEW SESSION</button>
+</div>
+</div>
+
+```
+  {/* Main Body */}
+  <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+    {/* Memory Panel */}
+    {showMemory && (
+      <div style={{ width: "280px", background: "#060c18", borderRight: "1px solid #1a2540", padding: "16px", overflowY: "auto", flexShrink: 0 }}>
+        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "9px", letterSpacing: "3px", color: "#14e8b0", marginBottom: "16px" }}>PERSISTENT MEMORY</div>
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ fontSize: "9px", color: "#4a6080", fontFamily: "'Space Mono', monospace", marginBottom: "6px", letterSpacing: "1px" }}>IDENTITY</div>
+          <div style={{ fontSize: "11px", color: "#f4a940", marginBottom: "2px" }}>{memory?.name}</div>
+          <div style={{ fontSize: "10px", color: "#8090b0" }}>{memory?.alias} · {memory?.position}</div>
+          <div style={{ fontSize: "10px", color: "#14e8b0", marginTop: "4px", fontFamily: "'Space Mono', monospace" }}>{memory?.rootkey}</div>
+        </div>
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ fontSize: "9px", color: "#4a6080", fontFamily: "'Space Mono', monospace", marginBottom: "6px", letterSpacing: "1px" }}>LEGAL CHAIN</div>
+          {memory?.legalRecord?.map((item, i) => (
+            <div key={i} style={{ fontSize: "9px", color: "#8090b0", marginBottom: "3px", lineHeight: "1.4" }}>· {item}</div>
+          ))}
+        </div>
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ fontSize: "9px", color: "#4a6080", fontFamily: "'Space Mono', monospace", marginBottom: "6px", letterSpacing: "1px" }}>FRAMEWORKS</div>
+          {memory?.frameworks?.map((f, i) => <div key={i} style={{ fontSize: "9px", color: "#7eb8ff", marginBottom: "3px" }}>· {f}</div>)}
+        </div>
+        <div style={{ marginBottom: "12px" }}>
+          <div style={{ fontSize: "9px", color: "#4a6080", fontFamily: "'Space Mono', monospace", marginBottom: "8px", letterSpacing: "1px" }}>SESSION NOTES</div>
+          {memory?.notes?.length === 0 && <div style={{ fontSize: "9px", color: "#2a3f6a" }}>No notes yet.</div>}
+          {memory?.notes?.map((n, i) => <div key={i} style={{ fontSize: "9px", color: "#8090b0", marginBottom: "6px", padding: "6px 8px", background: "#0a1020", borderLeft: "2px solid #1a2540", lineHeight: "1.5" }}>{n}</div>)}
+          <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Add a note to memory..." style={{ width: "100%", background: "#0a1020", border: "1px solid #1a2540", color: "#c8d8f0", padding: "6px 8px", fontSize: "9px", fontFamily: "'Space Mono', monospace", resize: "none", height: "60px", borderRadius: "2px", marginTop: "6px", boxSizing: "border-box" }} />
+          <button onClick={addNote} style={{ marginTop: "6px", width: "100%", background: "transparent", border: "1px solid #14e8b0", color: "#14e8b0", padding: "5px", fontFamily: "'Space Mono', monospace", fontSize: "9px", letterSpacing: "1px", cursor: "pointer", borderRadius: "2px" }}>SAVE TO MEMORY</button>
+        </div>
+      </div>
+    )}
+
+    {/* Chat Panel */}
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
+        {!initDone ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "10px", letterSpacing: "4px", color: "#14e8b0", marginBottom: "16px" }}>MEMORY LOADED</div>
+            <div style={{ fontSize: "24px", color: "#e8f0ff", fontWeight: "700", marginBottom: "8px", fontFamily: "'Georgia', serif" }}>Row 1 holds.</div>
+            <div style={{ fontSize: "14px", color: "#4a6080", fontFamily: "'Space Mono', monospace", letterSpacing: "2px", marginBottom: "32px" }}>SESSION #{(memory?.conversationCount || 0) + 1} · {memory?.notes?.length || 0} NOTES READY</div>
+            {deepThink && (
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "9px", color: "#14e8b0", letterSpacing: "2px", marginBottom: "16px", padding: "6px 14px", border: "1px solid #0d2a1a", borderRadius: "2px" }}>◈ DEEP THINK ACTIVE</div>
+            )}
+            <button onClick={startSession} disabled={loading} style={{ background: "transparent", border: "2px solid #14e8b0", color: "#14e8b0", padding: "14px 36px", fontFamily: "'Space Mono', monospace", fontSize: "11px", letterSpacing: "3px", cursor: loading ? "not-allowed" : "pointer", borderRadius: "2px", transition: "all 0.2s" }}>
+              {loading ? "INITIALIZING…" : "INITIALIZE SESSION"}
+            </button>
+          </div>
+        ) : (
+          <div style={{ maxWidth: "760px", margin: "0 auto" }}>
+            {messages.map((msg, i) => (
+              <div key={i} style={{ marginBottom: "20px", display: "flex", flexDirection: msg.role === "user" ? "row-reverse" : "row", gap: "10px", alignItems: "flex-start" }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: msg.role === "user" ? "#1a2540" : "#0d2a1a", border: msg.role === "user" ? "1px solid #2a3f6a" : "1px solid #14e8b0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "7px", color: msg.role === "user" ? "#7eb8ff" : "#14e8b0" }}>{msg.role === "user" ? "CJT" : "AI"}</span>
+                </div>
+                <div style={{ maxWidth: "80%", minWidth: 0 }}>
+                  {/* Deep Think reasoning block */}
+                  {msg.deepThink && msg.thinking && (
+                    <ThinkingBlock
+                      thinking={msg.thinking}
+                      expanded={!!expandedThinking[msg.id || i]}
+                      onToggle={() => toggleThinking(msg.id || i)}
+                    />
+                  )}
+                  {/* Message bubble */}
+                  <div style={{ background: msg.role === "user" ? "#080f20" : "#060f16", border: msg.role === "user" ? "1px solid #1a2540" : "1px solid #0d2a1a", padding: "12px 16px", borderRadius: "2px", lineHeight: "1.7", fontSize: "14px", color: msg.role === "user" ? "#8090b0" : "#c8d8f0" }}>
+                    {msg.content}
+                  </div>
+                  {/* Deep Think badge */}
+                  {msg.deepThink && (
+                    <div style={{ marginTop: "4px", display: "flex", justifyContent: "flex-end" }}>
+                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "7px", color: "#1a4040", letterSpacing: "1px" }}>◈ deep think</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "20px" }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#0d2a1a", border: "1px solid #14e8b0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "7px", color: "#14e8b0" }}>AI</span>
+                </div>
+                <div style={{ background: "#060f16", border: "1px solid #0d2a1a", padding: "12px 16px", borderRadius: "2px" }}>
+                  {deepThink ? (
+                    <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "9px", color: "#2a7060", letterSpacing: "2px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ color: "#14e8b0" }}>◈</span>
+                      DEEP THINKING…
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", gap: "4px" }}>
+                      {[0,1,2].map(j => <div key={j} style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#14e8b0", animation: `bounce 0.8s ${j*0.2}s infinite` }} />)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      {initDone && (
+        <div style={{ padding: "16px 20px", borderTop: "1px solid #1a2540", background: "rgba(6,12,24,0.98)", flexShrink: 0 }}>
+          {deepThink && (
+            <div style={{ maxWidth: "760px", margin: "0 auto 8px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ color: "#14e8b0", fontSize: "10px" }}>◈</span>
+              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "8px", color: "#2a7060", letterSpacing: "2px" }}>DEEP THINK ACTIVE — TWO-PASS REASONING ENABLED</span>
+            </div>
+          )}
+          <div style={{ maxWidth: "760px", margin: "0 auto", display: "flex", gap: "10px" }}>
+            <textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={deepThink ? "Deep think will reason before responding…" : "Transmit to rootkey 104281421…"}
+              style={{ flex: 1, background: "#080f20", border: `1px solid ${deepThink ? "#0d2a20" : "#1a2540"}`, color: "#c8d8f0", padding: "10px 14px", fontFamily: "'Georgia', serif", fontSize: "14px", resize: "none", height: "52px", borderRadius: "2px", outline: "none", lineHeight: "1.5", transition: "border-color 0.2s" }}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={loading || !input.trim()}
+              style={{ background: loading ? "#0a1a0a" : "#14e8b0", border: "none", color: loading ? "#14e8b0" : "#02040a", padding: "0 20px", fontFamily: "'Space Mono', monospace", fontSize: "10px", letterSpacing: "2px", cursor: loading ? "not-allowed" : "pointer", borderRadius: "2px", fontWeight: "700" }}
+            >
+              {deepThink && !loading ? "◈ SEND" : "SEND"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <style>{`
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    @keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:#02040a; }
+    ::-webkit-scrollbar-thumb { background:#1a2540; }
+  `}</style>
+</div>
+```
+
+);
+}

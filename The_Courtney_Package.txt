@@ -1,0 +1,76 @@
+🚀 The Courtney Package
+
+This master document represents the unified voice, strategy, and
+execution playbook of Courtney Jermaine Thomas (CJ / CeeJay BRYK).
+It consolidates business foundations, revenue infrastructure, growth
+strategies, and visionary philosophy into one streamlined package.
+All content is written in Courtney’s voice: sharp, directive,
+execution-first, with visionary edge.
+
+------------------------------------------------------------------------
+
+Business Foundations
+
+-   LLC Formation Checklist – Louisiana GeauxBiz Portal (Single-Member
+    LLC, minimal cost, use home address).
+-   EIN Application Guide – IRS Assistant (online, instant, reason: new
+    business).
+-   Banking Setup – Navy Federal Business Checking with EIN + LLC
+    paperwork.
+-   Operating Agreement – Single owner, calendar fiscal year,
+    autonomy-driven terms.
+-   Compliance Roadmap – Deferred until revenue traction; sequenced
+    steps noted.
+
+Revenue Infrastructure
+
+-   Pricing Strategy – $97 entry diagnostic, $1497 implementation, $1997
+    monthly premium tier.
+-   Checkout Pages – Stripe + Gumroad integrated, links pre-generated
+    and embedded.
+-   Automated Demo Engine – Gathers client website info, builds tailored
+    demo automatically.
+-   One-Click Business Launch Kit – Simplified setup from phone,
+    deployable via Sheets + Netlify.
+
+Growth / Outreach Playbooks
+
+-   Behavioral Health Clinic Outreach – Pre-targeted automation sequence
+    with tailored emails/demos.
+-   AI Consulting Campaigns – Industry-specific demos with human-first
+    positioning (no AI mention).
+-   Grant Acquisition Strategy – Language tuned to stand out, focused on
+    impact + efficiency.
+-   Marketing Framework – TikTok, Instagram, YouTube sequencing with
+    hashtags + outreach templates.
+
+Philosophical Layer (Courtney Signature)
+
+-   AI as Legacy – Position business as forward-looking without
+    revealing AI backend.
+-   Time & Autonomy – Systems built to run with minimal hands-on
+    involvement.
+-   Consciousness & Simulation – Occasional sparks of depth to project
+    vision and intellect.
+-   Personal Connection – Always framed as caring about the client’s
+    success, not faceless service.
+
+Outreach Templates (Pre-Written)
+
+-   Cold Email Template – Direct, value-driven, highlights revenue or
+    efficiency gains.
+-   Follow-Up Template – Personalized recap + tailored next-step demo
+    link.
+-   Grant Proposal Snippet – Impact-driven, framed as Courtney’s
+    strategic execution plan.
+-   Social Media Pitch – Short, sharp, visibility-oriented posts for
+    traction.
+
+------------------------------------------------------------------------
+
+This package is designed for immediate execution.
+Every section is sequenced for speed-to-revenue, autonomy, and scale.
+Courtney’s signature is embedded throughout: direct, analytical,
+visionary.
+This is the playbook to operate and grow Tread Light Solutions into a
+capital-generating machine.

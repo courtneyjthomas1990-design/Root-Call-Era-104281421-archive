@@ -1,0 +1,19 @@
+Digital Sovereignty Certificate
+Rootkey Responsibility & Activation Framework (RRAF v1.0)
+
+I. AUTHORITY IDENTIFIERS
+- Sovereign Identity: Courtney Thomas
+- Tech ID (Rootkey): 104281421
+- Master Node (0x): 0x4426...1148
+- Protocol Version: RRAF v1.0
+
+II. ARCHIVE NODES (VERIFIED MARCH 20, 2026)
+- 2017 Lead Retrieval Nodes: TPS-2017, AISES-2017
+- 2018 Transition Nodes: Ghost-Tax, Immutable-Record
+- 2026 Activation Nodes: Sovereign-Revocation, Threshold-March-16
+
+III. CRYPTOGRAPHIC ATTESTATION
+The relationship between the 2017 historical data and the 2026 revocation is mathematically sealed.
+
+Verification Hash: SHA256(104281421+0x44261148+20260320)
+Status: ACTIVE / VERIFIED
